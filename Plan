@@ -1,0 +1,788 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+
+
+namespace PlanZajęć
+{
+
+    class Zajęcia
+    {
+        public Przedmiot nazwaPrzedmiotu;
+        public Zajęcia(Przedmiot nnazwa)
+        {
+            nazwaPrzedmiotu = nnazwa;
+        }
+    }
+    class Przedmiot
+    {
+        public string nazwa;
+        public List<Nauczyciel> lista = new List<Nauczyciel>();
+        public Przedmiot(string nnazwa)
+        {
+            nazwa = nnazwa;
+        }
+
+    }
+    class Nauczyciel
+    {
+        public string nazwa;
+        public Nauczyciel(string nazwaNauczyciela)
+        {
+            nazwa = nazwaNauczyciela;
+        }
+
+    }
+    class Klasa
+    {
+        public string nazwa;
+        public Przedmiot[] nazwyPrzedmitów;
+        public Nauczyciel wychowawca;
+        public int[] liczbaGodzin;
+        public int liczbaPrzedmiotów = 0;
+        public int sumaGodzin = 0;
+        public Klasa(string nazwaKlasy, int liczba, Nauczyciel wych)
+        {
+            nazwa = nazwaKlasy;
+            nazwyPrzedmitów = new Przedmiot[liczba];
+            liczbaGodzin = new int[liczba];
+            wychowawca = wych;
+        }
+        public void DodajPrzedmiot(Przedmiot przedmiot, int liczbGodzin)
+        {
+            nazwyPrzedmitów[liczbaPrzedmiotów] = przedmiot;
+            liczbaGodzin[liczbaPrzedmiotów] = liczbGodzin;
+            liczbaPrzedmiotów++;
+            sumaGodzin += liczbGodzin;
+        }
+    }
+    class Algorytm
+    {
+        int liczba_przedmiotów;
+        int liczba_klas;
+        List<Zajęcia[,,]> populacja = new List<Zajęcia[,,]>();
+        List<Nauczyciel[,]> populacja2 = new List<Nauczyciel[,]>();
+        List<Nauczyciel> lista_nauczycieli = new List<Nauczyciel>();
+        Przedmiot[] przedmioty;
+        Klasa[] klasy;
+        static int liczba_generacj = 1000, liczba_populacji = 50;
+        double[] ocena_osobników = new double[liczba_populacji];
+        int liczba_turnieju = 5;
+        int praw_mut = 50;
+        Random rand = new Random();
+        public Algorytm()
+        {
+            int pom2;
+            int pom;
+            bool pomb;
+            string poms;
+            String wychowawca;
+            StreamReader wczytajPrzedmoty = new StreamReader("Przedmoity.txt");
+            liczba_przedmiotów = Convert.ToInt32(wczytajPrzedmoty.ReadLine());
+            przedmioty = new Przedmiot[liczba_przedmiotów];
+            for (int i = 0; i < liczba_przedmiotów; i++)
+            {
+                poms = wczytajPrzedmoty.ReadLine();
+                poms = poms.PadLeft(16, ' ');
+                przedmioty[i] = new Przedmiot(poms);
+                pom = Convert.ToInt32(wczytajPrzedmoty.ReadLine());
+                for (int k = 0; k < pom; k++)
+                {
+                    poms = wczytajPrzedmoty.ReadLine();
+                    poms = poms.PadLeft(16, ' ');
+                    przedmioty[i].lista.Add(new Nauczyciel(poms));
+                    pomb = true; ;
+                    for (int h = 0; h < lista_nauczycieli.Count; h++)
+                    {
+                        if (lista_nauczycieli[h].nazwa == poms)
+                        {
+                            pomb = false;
+                        }
+                    }
+                    if (pomb)
+                    {
+                        lista_nauczycieli.Add(przedmioty[i].lista[k]);
+                    }
+                }
+
+            }
+            wczytajPrzedmoty.Close();
+            StreamReader wczytajKlasy = new StreamReader("Klasy.txt");
+            liczba_klas = Convert.ToInt32(wczytajKlasy.ReadLine());
+            klasy = new Klasa[liczba_klas];
+            for (int i = 0; i < liczba_klas; i++)
+            {
+                poms = wczytajKlasy.ReadLine();
+                wychowawca = wczytajKlasy.ReadLine();
+                wychowawca = wychowawca.PadLeft(16, ' ');
+                pom2 = Convert.ToInt32(wczytajKlasy.ReadLine());
+                klasy[i] = new Klasa(poms, pom2, new Nauczyciel(wychowawca));
+                for (int j = 0; j < pom2; j++)
+                {
+                    poms = wczytajKlasy.ReadLine();
+                    pom = Convert.ToInt32(Convert.ToString(poms[0]));
+                    poms = poms.Substring(2);
+                    poms = poms.PadLeft(16, ' ');
+                    for (int k = 0; k < liczba_przedmiotów; k++)
+                    {
+                        if (przedmioty[k].nazwa == poms)
+                        {
+                            klasy[i].DodajPrzedmiot(przedmioty[k], pom);
+                            k = liczba_przedmiotów;
+                        }
+
+                    }
+                }
+            }
+            wczytajKlasy.Close();
+        }
+
+        public Nauczyciel[,] GenerujNauczycieli()
+        {
+            Nauczyciel[,] nauczyciele = new Nauczyciel[liczba_klas, liczba_przedmiotów];
+            string poms;
+            for (int i = 0; i < liczba_klas; i++)
+            {
+                for (int j = 0; j < klasy[i].liczbaPrzedmiotów; j++)
+                {
+                    poms = "zaj_z_wych";
+                    poms = poms.PadLeft(16, ' ');
+                    if (klasy[i].nazwyPrzedmitów[j].nazwa != poms)
+                    {
+                        nauczyciele[i, j] = klasy[i].nazwyPrzedmitów[j].lista[rand.Next(klasy[i].nazwyPrzedmitów[j].lista.Count)];
+                    }
+                    else
+                    {
+                        nauczyciele[i, j] = klasy[i].wychowawca;
+                    }
+                }
+            }
+
+            return nauczyciele;
+        }
+        public Zajęcia[,,] GeneruPlan()
+        {
+            Zajęcia[,,] plan = new Zajęcia[liczba_klas, 8, 5];
+            Przedmiot[] pomPrzedmioty;
+            int[] pomLiczbaGodzin;
+            int liczba_przedmiotów;
+            int pomRand;
+            string poms;
+            for (int i = 0; i < liczba_klas; i++)
+            {
+                liczba_przedmiotów = klasy[i].liczbaPrzedmiotów;
+                pomPrzedmioty = new Przedmiot[liczba_przedmiotów];
+                pomLiczbaGodzin = new int[liczba_przedmiotów];
+                klasy[i].nazwyPrzedmitów.CopyTo(pomPrzedmioty, 0);
+                klasy[i].liczbaGodzin.CopyTo(pomLiczbaGodzin, 0);
+                for (int k = 0; k < 8; k++)
+                {
+                    for (int h = 0; h < 5; h++)
+                    {
+                        if (liczba_przedmiotów > 0)
+                        {
+                            pomRand = rand.Next(liczba_przedmiotów);
+                            plan[i, k, h] = new Zajęcia(pomPrzedmioty[pomRand]);
+                            pomLiczbaGodzin[pomRand]--;
+                            if (pomLiczbaGodzin[pomRand] == 0)
+                            {
+                                liczba_przedmiotów--;
+                                for (int l = pomRand; l < liczba_przedmiotów; l++)
+                                {
+                                    pomPrzedmioty[l] = pomPrzedmioty[l + 1];
+                                    pomLiczbaGodzin[l] = pomLiczbaGodzin[l + 1];
+                                }
+                            }
+                        }
+                        else
+                        {
+                            poms = "brak zajęć";
+                            poms = poms.PadLeft(16, ' ');
+                            plan[i, k, h] = new Zajęcia(new Przedmiot(poms));
+                        }
+                    }
+                }
+            }
+
+            return plan;
+        }
+        public int Funkcja_Twarda(Zajęcia[,,] plan, Nauczyciel[,] nauczyciele)
+        {
+            Przedmiot[] przedmioty;
+            Nauczyciel[,,] naucz = new Nauczyciel[liczba_klas, 8, 5];
+            int[] liczba_wystąpień = { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int liczba_przedmiotów;
+            int wartość_oceny = 0;
+            bool pomb;
+            string poms;
+            for (int j = 0; j < plan.GetLength(0); j++)
+            {
+                for (int k = 0; k < plan.GetLength(2); k++)
+                {
+                    liczba_przedmiotów = 0;
+                    przedmioty = new Przedmiot[8];
+                    for (int h = 0; h < plan.GetLength(1); h++)
+                    {
+
+                        poms = "brak zajęć";
+                        poms = poms.PadLeft(16, ' ');
+                        if (plan[j, h, k].nazwaPrzedmiotu.nazwa != poms)
+                        {
+                            for (int i = 0; i < klasy[j].nazwyPrzedmitów.Length; i++)
+                            {
+                                if (plan[j, h, k].nazwaPrzedmiotu.nazwa == klasy[j].nazwyPrzedmitów[i].nazwa)
+                                {
+                                    for (int u = 0; u < j; u++)
+                                    {
+                                        if (nauczyciele[j, i].nazwa == naucz[u, h, k].nazwa)
+                                        {
+                                            wartość_oceny++;
+                                            i = liczba_klas + 1;
+                                        }
+                                    }
+
+                                    naucz[j, h, k] = nauczyciele[j, i];
+                                    i = klasy[j].nazwyPrzedmitów.Length;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            naucz[j, h, k] = new Nauczyciel("");
+                        }
+
+
+
+
+
+
+
+
+                        if (plan[j, h, k].nazwaPrzedmiotu.nazwa != poms)
+                        {
+                            if (h == 0)
+                            {
+                                przedmioty[0] = plan[j, h, k].nazwaPrzedmiotu;
+                                liczba_wystąpień[0] = 1;
+                                liczba_przedmiotów++;
+                            }
+                            else
+                            {
+                                pomb = false;
+                                for (int u = 0; u < liczba_przedmiotów && !pomb; u++)
+                                {
+                                    if (plan[j, h, k].nazwaPrzedmiotu.nazwa == przedmioty[u].nazwa)
+                                    {
+                                        pomb = true;
+                                        liczba_wystąpień[u]++;
+                                        if (liczba_wystąpień[u] > 2)
+                                        {
+                                            wartość_oceny++;
+                                        }
+                                    }
+                                }
+                                if (!pomb)
+                                {
+                                    przedmioty[liczba_przedmiotów] = plan[j, h, k].nazwaPrzedmiotu;
+                                    liczba_wystąpień[liczba_przedmiotów] = 1;
+                                    liczba_przedmiotów++;
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return wartość_oceny;
+        }
+        public int Funkcja_M(Zajęcia[,,] plan, Nauczyciel[,] nauczyciele)
+        {
+            int wartość_oceny = 0;
+            string poms;
+            bool[,,] naucz = new bool[lista_nauczycieli.Count, 8, 5];
+            bool pomb;
+            int liczba_luk;
+            for (int j = 0; j < lista_nauczycieli.Count; j++)
+            {
+                for (int k = 0; k < 8; k++)
+                {
+
+                    for (int h = 0; h < 5; h++)
+                    {
+                        naucz[j, k, h] = false;
+                    }
+                }
+            }
+
+
+            poms = "brak zajęć";
+            poms = poms.PadLeft(16, ' ');
+            for (int j = 0; j < plan.GetLength(0); j++)
+            {
+                for (int k = 0; k < plan.GetLength(2); k++)
+                {
+                    pomb = false;
+                    liczba_luk = 0;
+                    for (int h = 0; h < plan.GetLength(1); h++)
+                    {
+                        if (plan[j, h, k].nazwaPrzedmiotu.nazwa != poms)
+                        {
+                            for (int i = 0; i < klasy[j].nazwyPrzedmitów.Length; i++)
+                            {
+                                if (plan[j, h, k].nazwaPrzedmiotu.nazwa == klasy[j].nazwyPrzedmitów[i].nazwa)
+                                {
+                                    for (int u = 0; u < lista_nauczycieli.Count; u++)
+                                    {
+                                        if (nauczyciele[j, i].nazwa == lista_nauczycieli[u].nazwa)
+                                        {
+                                            naucz[u, h, k] = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+
+
+                        if (plan[j, h, k].nazwaPrzedmiotu.nazwa != poms)
+                        {
+                            pomb = true;
+                            wartość_oceny += liczba_luk * 10;
+                            liczba_luk = 0;
+                        }
+                        if (plan[j, h, k].nazwaPrzedmiotu.nazwa == poms && pomb)
+                        {
+                            liczba_luk++;
+                        }
+
+                    }
+
+
+                }
+            }
+
+            for (int i = 0; i < lista_nauczycieli.Count; i++)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    liczba_luk = 0;
+                    pomb = false;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        if (naucz[i, k, j])
+                        {
+                            pomb = true;
+                            wartość_oceny += liczba_luk;
+                            liczba_luk = 0;
+                        }
+                        if (pomb)
+                        {
+                            if (!naucz[i, k, j])
+                            {
+                                liczba_luk++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return wartość_oceny;
+        }
+        public int Selekcja()
+        {
+            int najlepszy;
+            double wartość_najlepszego;
+            int wybrany;
+            wybrany = rand.Next(liczba_populacji);
+            najlepszy = wybrany;
+            wartość_najlepszego = ocena_osobników[wybrany];
+            for (int i = 1; i < liczba_turnieju; i++)
+            {
+                wybrany = rand.Next(populacja.Count);
+                if (ocena_osobników[wybrany] < wartość_najlepszego)
+                {
+                    najlepszy = wybrany;
+                    wartość_najlepszego = ocena_osobników[wybrany];
+                }
+            }
+            return najlepszy;
+        }
+        public Nauczyciel[,] KrzyżowanieN(Nauczyciel[,] o1, Nauczyciel[,] o2)
+        {
+            Nauczyciel[,] potomek = new Nauczyciel[liczba_klas, liczba_przedmiotów];
+            for (int i = 0; i < liczba_klas; i++)
+            {
+                for (int j = 0; j < klasy[i].liczbaPrzedmiotów; j++)
+                {
+                    if (rand.Next(2) == 0)
+                    {
+                        potomek[i, j] = o1[i, j];
+                    }
+                    else
+                    {
+                        potomek[i, j] = o2[i, j];
+                    }
+                }
+            }
+            return potomek;
+        }
+        public Zajęcia[,,] Krzyżowanie(Zajęcia[,,] o1, Zajęcia[,,] o2)
+        {
+            Zajęcia[,,] potomek = new Zajęcia[liczba_klas, 8, 5];
+            List<Zajęcia> zpier = new List<Zajęcia>();
+            List<Zajęcia> zdrug = new List<Zajęcia>();
+            Przedmiot[] lista_przed;
+            int[] liczba_godzin;
+            List<bool> czyus1 = new List<bool>();
+            List<bool> czyus2 = new List<bool>();
+            bool[,] tablica = new bool[8, 5];
+            Random rand = new Random();
+            int n, m;
+            Zajęcia szukane;
+            bool pomb, flaga;
+            string poms;
+            for (int i = 0; i < o1.GetLength(0); i++)
+            {
+                lista_przed = new Przedmiot[klasy[i].nazwyPrzedmitów.Length + 1];
+                poms = "brak zajęć";
+                poms = poms.PadLeft(16, ' ');
+                lista_przed[lista_przed.Length - 1] = new Przedmiot(poms);
+                liczba_godzin = new int[lista_przed.Length];
+                liczba_godzin[lista_przed.Length - 1] = 40 - klasy[i].sumaGodzin;
+                klasy[i].liczbaGodzin.CopyTo(liczba_godzin, 0);
+                klasy[i].nazwyPrzedmitów.CopyTo(lista_przed, 0);
+                zpier.Clear();
+                zdrug.Clear();
+
+                for (int j = 0; j < o1.GetLength(1); j++)
+                {
+                    for (int k = 0; k < o1.GetLength(2); k++)
+                    {
+                        if (rand.Next(2) == 0)
+                        {
+                            for (int h = 0; h < lista_przed.Length; h++)
+                            {
+                                if (o1[i, j, k].nazwaPrzedmiotu.nazwa == lista_przed[h].nazwa)
+                                {
+                                    liczba_godzin[h]--;
+                                    h = lista_przed.Length + 1;
+                                }
+                            }
+                            potomek[i, j, k] = o1[i, j, k];
+                            zpier.Add(o1[i, j, k]);
+                            zdrug.Add(o2[i, j, k]);
+                            czyus1.Add(false);
+                            czyus2.Add(false);
+                        }
+                        else
+                        {
+                            potomek[i, j, k] = null;
+                        }
+                    }
+                }
+
+                n = zdrug.Count;
+                for (int j = 0; j < n; j++)
+                {
+                    for (int k = 0; k < n; k++)
+                    {
+                        if (zdrug[j].nazwaPrzedmiotu.nazwa == zpier[k].nazwaPrzedmiotu.nazwa && !czyus1[k])
+                        {
+                            czyus2[j] = true;
+                            czyus1[k] = true;
+                            k = zpier.Count + 10;
+                        }
+                    }
+                }
+                for (int j = zdrug.Count - 1; j >= 0; j--)
+                {
+                    if (czyus2[j])
+                    {
+                        zdrug.RemoveAt(j);
+                        zpier.RemoveAt(j);
+                    }
+
+                }
+
+                czyus1.Clear();
+                czyus2.Clear();
+                for (int j = 0; j < zdrug.Count; j++)
+                {
+                    szukane = new Zajęcia(zpier[j].nazwaPrzedmiotu);
+                    pomb = true;
+                    for (int h = 0; h < lista_przed.Length; h++)
+                    {
+                        if (zdrug[j].nazwaPrzedmiotu.nazwa == lista_przed[h].nazwa)
+                        {
+                            liczba_godzin[h]--;
+                            h = lista_przed.Length + 1;
+                        }
+                    }
+                    n = 0;
+                    m = 0;
+                    for (int z = 0; z < 8; z++)
+                    {
+                        for (int zz = 0; zz < 5; zz++)
+                        {
+                            tablica[z, zz] = true;
+                        }
+                    }
+
+                    flaga = false;
+                    while (pomb)
+                    {
+                        while (szukane.nazwaPrzedmiotu.nazwa != o2[i, n, m].nazwaPrzedmiotu.nazwa || !tablica[n, m])
+                        {
+                            if (szukane.nazwaPrzedmiotu.nazwa == o2[i, n, m].nazwaPrzedmiotu.nazwa && flaga)
+                            { 
+                                tablica[n, m] = true;
+                            }
+                            if (m < 4) 
+                            { 
+                                m++;
+                            }
+                            else
+                            {
+                                m = 0;
+                                n++;
+                            }
+                            if (n == 8)
+                            {
+                                m = 0;
+                                n = 0;
+                                flaga = true;
+                            }
+                        }
+
+                        if (potomek[i, n, m] == null)
+                        {
+                            potomek[i, n, m] = zdrug[j];
+                            pomb = false;
+                        }
+                        else
+                        {
+                            if (!flaga)
+                            {
+                                szukane = potomek[i, n, m];
+                                tablica[n, m] = false;
+                            }
+                            else
+                            {
+                                szukane = new Zajęcia(zpier[j].nazwaPrzedmiotu);
+                            }
+                            flaga = false;
+                            n = 0;
+                            m = 0;
+                        }
+
+
+                    }
+
+                }
+                for (int j = 0; j < potomek.GetLength(1); j++)
+                {
+                    for (int k = 0; k < potomek.GetLength(2); k++)
+                    {
+                        if (potomek[i, j, k] == null)
+                        {
+                            for (int h = 0; h < lista_przed.Length; h++)
+                            {
+                                if (o2[i, j, k].nazwaPrzedmiotu.nazwa == lista_przed[h].nazwa)
+                                {
+                                    if (liczba_godzin[h] != 0)
+                                    {
+                                        liczba_godzin[h]--;
+                                        potomek[i, j, k] = o2[i, j, k];
+                                        h = lista_przed.Length + 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                for (int j = 0; j < potomek.GetLength(1); j++)
+                {
+                    for (int k = 0; k < potomek.GetLength(2); k++)
+                    {
+                        if (potomek[i, j, k] == null)
+                        {
+                            for (int h = 0; h < lista_przed.Length; h++)
+                            {
+
+                                if (liczba_godzin[h] != 0)
+                                {
+                                    liczba_godzin[h]--;
+                                    potomek[i, j, k] = new Zajęcia(lista_przed[h]);
+                                    h = lista_przed.Length + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return potomek;
+        }
+        public void MutujN(Nauczyciel[,] o)
+        {
+            string poms;
+            for (int i = 0; i < liczba_klas; i++)
+            {
+                for (int j = 0; j < klasy[i].liczbaPrzedmiotów; j++)
+                {
+                    poms = "zaj_z_wych";
+                    poms = poms.PadLeft(16, ' ');
+                    if (rand.Next(1000) < praw_mut && klasy[i].nazwyPrzedmitów[j].nazwa != poms)
+                    {
+                        o[i, j] = klasy[i].nazwyPrzedmitów[j].lista[rand.Next(klasy[i].nazwyPrzedmitów[j].lista.Count)];
+                    }
+                }
+            }
+        }
+        public void Mutuj(Zajęcia[,,] plan)
+        {
+            int pom;
+            int x, y, x1, y1;
+            Zajęcia zaj;
+            Random rand = new Random();
+            for (int i = 0; i < plan.GetLength(0); i++)
+            {
+                pom = rand.Next(1000);
+                if (pom < praw_mut)
+                {
+                    x = rand.Next(8);
+                    y = rand.Next(5);
+                    zaj = plan[i, x, y];
+                    do
+                    {
+                        x1 = rand.Next(8);
+                        y1 = rand.Next(5);
+                    } while (x1 == x && y == y1);
+                    plan[i, x, y] = plan[i, x1, y1];
+                    plan[i, x1, y1] = zaj;
+                }
+            }
+        }
+        public Zajęcia[,,] Wykonaj()
+        {
+            List<Zajęcia[,,]> nowy;
+            List<Nauczyciel[,]> nowiNauczyciele;
+            Zajęcia[,,] najlepszy;
+            Nauczyciel[,] najlepszyn;
+            Zajęcia[,,] pom;
+            int osobnik1, osobnik2;
+            double wartość_najlepszego;
+            int licznik = 0;
+            populacja.Add(GeneruPlan());
+            populacja2.Add(GenerujNauczycieli());
+            ocena_osobników[0] = (double)Funkcja_Twarda(populacja[0], populacja2[0]) + (double)Funkcja_M(populacja[0], populacja2[0]) / 1000;
+            najlepszy = populacja[0];
+            najlepszyn = populacja2[0];
+            wartość_najlepszego = ocena_osobników[0];
+            for (int i = 1; i < liczba_populacji; i++)
+            {
+                populacja.Add(GeneruPlan());
+                populacja2.Add(GenerujNauczycieli());
+                ocena_osobników[i] = (double)Funkcja_Twarda(populacja[i], populacja2[i]) + (double)Funkcja_M(populacja[i], populacja2[i]) / 1000;
+                if (ocena_osobników[i] < wartość_najlepszego)
+                {
+                    najlepszy = populacja[i];
+                    najlepszyn = populacja2[i];
+                    wartość_najlepszego = ocena_osobników[i];
+                    Console.WriteLine(wartość_najlepszego);
+                }
+            }
+            while (licznik < liczba_generacj)
+            {
+                nowy = new List<Zajęcia[,,]>();
+                nowiNauczyciele = new List<Nauczyciel[,]>();
+                for (int i = 0; i < liczba_populacji; i++)
+                {
+                    osobnik1 = Selekcja();
+                    osobnik2 = Selekcja();
+                    pom = Krzyżowanie(populacja[osobnik1], populacja[osobnik2]);
+                    nowiNauczyciele.Add(KrzyżowanieN(populacja2[osobnik1], populacja2[osobnik2]));
+                    Mutuj(pom);
+                    MutujN(nowiNauczyciele[i]);
+                    nowy.Add(pom);
+                }
+                populacja.Clear();
+                populacja2.Clear();
+                for (int i = 0; i < liczba_populacji; i++)
+                {
+                    populacja.Add(nowy[i]);
+                    populacja2.Add(nowiNauczyciele[i]);
+                    ocena_osobników[i] = (double)Funkcja_Twarda(populacja[i], populacja2[i]) + (double)Funkcja_M(populacja[i], populacja2[i]) / 1000; ;
+                    if (ocena_osobników[i] < wartość_najlepszego)
+                    {
+                        najlepszy = populacja[i];
+                        najlepszyn = populacja2[i];
+                        wartość_najlepszego = ocena_osobników[i];
+                        Console.WriteLine(wartość_najlepszego);
+                    }
+                }
+                licznik++;
+                nowy.Clear();
+                nowiNauczyciele.Clear();
+            }
+            WyświetlPlan(najlepszy, najlepszyn);
+            return najlepszy;
+        }
+        public void WyświetlPlan(Zajęcia[,,] nowyplan, Nauczyciel[,] nauczyciele)
+        {
+            string poms;
+            poms = "zaj_z_wych";
+            poms = poms.PadLeft(16, ' ');
+            for (int i = 0; i < nowyplan.GetLength(0); i++)
+            {
+                Console.WriteLine("Klasa " + klasy[i].nazwa);
+                //for (int j = 0; j < klasy[i].liczbaPrzedmiotów; j++)
+                //{
+                //    Console.WriteLine(klasy[i].nazwyPrzedmitów[j].nazwa + " " + nauczyciele[i, j].nazwa);
+                //}
+                //Console.WriteLine();
+                for (int j = 0; j < nowyplan.GetLength(1); j++)
+                {
+                    for (int k = 0; k < nowyplan.GetLength(2); k++)
+                    {
+                        Console.Write(nowyplan[i, j, k].nazwaPrzedmiotu.nazwa + " ");
+                    }
+                    Console.WriteLine();
+                    for (int k = 0; k < nowyplan.GetLength(2); k++)
+                    {
+                        if (nowyplan[i, j, k].nazwaPrzedmiotu.nazwa != poms)
+                        {
+                            for (int h = 0; h < klasy[i].nazwyPrzedmitów.Length; h++)
+                            {
+                                if (nowyplan[i, j, k].nazwaPrzedmiotu.nazwa == klasy[i].nazwyPrzedmitów[h].nazwa)
+                                {
+                                    Console.Write(nauczyciele[i, h].nazwa + " ");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.Write("                 ");
+                        }
+                    }
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+            }
+        }
+
+    }
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Algorytm plan = new Algorytm();
+            plan.Wykonaj();
+
+
+            Console.ReadKey();
+        }
+    }
+}
